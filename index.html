@@ -751,7 +751,7 @@ function playFx(name){
 function cheeseScene(W,H){
   var id=state.items.grilled.mode==="out"?null:"grilled";
   if(!id) return steamScene(W,H);
-  var b=boxPx(id,W,H), y0=b.y+b.h;
+  var b=boxPx(id,W,H), y0=b.y+b.h*0.72; /* starts at the melted cheese of the sandwich photo, not at the frame edge */
   var drips=[
     {x:b.x+b.w*0.58,delay:0,scale:1,breaks:true},
     {x:b.x+b.w*0.41,delay:0.7,scale:0.6,breaks:false}
