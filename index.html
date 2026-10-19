@@ -64,16 +64,17 @@ section>h2 em{font-weight:400}
 .wall .stage{aspect-ratio:16/9;max-width:100%;border:1px solid var(--green)}
 /* all type on the stage is sized against the stage width, so every poster gets the same size */
 .box{position:absolute}
-.ph{position:absolute;inset:0;background:var(--green);color:var(--cream);display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;padding:1.4cqw .8cqw 1cqw;font-weight:700;font-size:1.9cqw;line-height:1.05;text-transform:uppercase}
-.ph span{font-size:1.7cqw;font-variant-numeric:tabular-nums}
+.ph{position:absolute;inset:0;background:var(--green);color:var(--cream);display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;padding:calc(var(--sw,1px)*1.4) calc(var(--sw,1px)*.8) calc(var(--sw,1px)*1);font-weight:700;font-size:calc(var(--sw,1px)*1.9);line-height:1.05;text-transform:uppercase}
+.ph span{font-size:calc(var(--sw,1px)*1.7);font-variant-numeric:tabular-nums}
 .box.is-out .ph span{visibility:hidden}
 .box.is-sel{outline:2px solid var(--light);outline-offset:-2px}
-.band{position:absolute;left:0;right:0;top:50%;height:17%;transform:translateY(-50%);background:var(--light);color:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:2.2cqw;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.band{position:absolute;left:8.5%;right:8.5%;bottom:calc(var(--u,1px)*37);height:calc(var(--u,1px)*20);background:var(--light);color:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:calc(var(--u,1px)*8.5);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;line-height:1}
 .deal{position:absolute;left:0;right:0;bottom:2.5%;height:10%;color:var(--light);font-family:var(--serif);line-height:1}
-.deal .dl{position:absolute;right:63%;top:50%;transform:translateY(-50%);font-style:italic;font-weight:400;font-size:1.5cqw;white-space:nowrap}
-.deal .strike{position:absolute;left:41%;width:19%;top:50%;height:.18cqw;margin-top:-.09cqw;background:var(--light);transform:rotate(-18deg)}
-.deal .dp{position:absolute;left:65%;top:50%;transform:translateY(-50%);font-weight:700;font-size:2.3cqw;font-variant-numeric:tabular-nums;white-space:nowrap}
-.menu-in{position:absolute;inset:0;color:var(--light);font-family:var(--sans);font-weight:700;font-size:calc(1.5cqw * var(--scale,1));line-height:1.3;display:flex;flex-direction:column}
+/* --u = 1% of the poster box width in px, set by sizeDeals(); Safari mis-resolves cqw on this container */
+.deal .dl{position:absolute;left:50%;bottom:calc(100% + var(--u,1px)*25);transform:translateX(-50%);font-style:italic;font-weight:400;font-size:calc(var(--u,1px)*13);white-space:nowrap}
+.deal .strike{position:absolute;left:41%;width:28%;top:50%;height:calc(var(--u,1px)*1.4);margin-top:calc(var(--u,1px)*-.7);background:var(--light);transform:rotate(-14deg)}
+.deal .dp{position:absolute;left:50%;bottom:calc(100% + var(--u,1px)*1);transform:translateX(-50%);font-weight:700;font-size:calc(var(--u,1px)*26);font-variant-numeric:tabular-nums;white-space:nowrap}
+.menu-in{position:absolute;inset:0;color:var(--light);font-family:var(--sans);font-weight:700;font-size:calc(var(--sw,1px) * 1.5 * var(--scale,1));line-height:1.3;display:flex;flex-direction:column}
 .m-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.8em;font-variant-numeric:tabular-nums}
 .m-head{font-size:.5em;letter-spacing:.28em;text-transform:uppercase;margin:1.4em 0 .9em}
 .m-head:first-child{margin-top:0}
@@ -92,6 +93,7 @@ section>h2 em{font-weight:400}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--green);color:var(--cream)}
 .seg button[data-mode="out"][aria-pressed="true"]{background:var(--deep)}
+.seg button:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
 .sw-deal{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:14px}
 @media (max-width:520px){.sw{grid-template-columns:minmax(0,1fr)}.seg{display:grid;grid-template-columns:repeat(3,1fr)}}
 
@@ -266,6 +268,7 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
     <button id="b-full">Vollbild</button>
     <button id="b-setup">Einrichten</button>
     <button id="b-panel">Zum Bedienfeld</button>
+    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 1</span>
   </div>
   <div class="bar-note" id="bar-note"></div>
 </div>
@@ -275,11 +278,11 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
 (function(){
 "use strict";
 var SANDWICHES=[
-  {id:"bigj",name:"Pastrami „Big J“",price:"21,90"},
+  {id:"bigj",name:"Pastrami „Big J“",price:"21,90",noDeal:true},
   {id:"italian",name:"The Italian",price:"9,90"},
   {id:"grilled",name:"Grilled Cheese",price:"9,50"},
   {id:"cannellini",name:"Cannellini & Zucchini",price:"9,90"},
-  {id:"classic",name:"Pastrami Classic",price:"13,90"},
+  {id:"classic",name:"Pastrami Classic",price:"13,90",noDeal:true},
   {id:"pulled",name:"Pulled Beef",price:"10,50"},
   {id:"porkbelly",name:"Korean Porkbelly",price:"9,90"}
 ];
@@ -309,7 +312,7 @@ function normState(d){
   var s={items:{},rows:[],notice:{on:false,text:""},setup:{on:false,sel:"bigj"}};
   SANDWICHES.forEach(function(x){
     var it=(d.items&&d.items[x.id])||{};
-    s.items[x.id]={mode:(it.mode==="out"||it.mode==="deal")?it.mode:"normal",deal:typeof it.deal==="string"?it.deal:""};
+    s.items[x.id]={mode:(it.mode==="out"||(it.mode==="deal"&&!x.noDeal))?it.mode:"normal",deal:typeof it.deal==="string"?it.deal:""};
   });
   if(Array.isArray(d.rows)) d.rows.forEach(function(r){
     if(!r||typeof r!=="object") return;
@@ -470,7 +473,15 @@ function renderStages(){
     var st=$("stage");st.classList.toggle("setup",setupOn());st.innerHTML=stageHTML(false);
     $("b-setup").textContent=setupOn()?"Einrichten beenden":"Einrichten";
   } else $("preview").innerHTML=stageHTML(true);
+  sizeDeals();
 }
+function sizeDeals(){
+  var st=document.querySelectorAll(".stage");
+  for(var j=0;j<st.length;j++){var sw=st[j].getBoundingClientRect().width;if(sw>0)st[j].style.setProperty("--sw",(sw/100)+"px");}
+  var d=document.querySelectorAll(".deal,.band");
+  for(var i=0;i<d.length;i++){var w=d[i].parentNode.getBoundingClientRect().width;if(w>0)d[i].style.setProperty("--u",(w/100)+"px");}
+}
+window.addEventListener("resize",sizeDeals);
 function positionBoxes(){
   var st=view==="beamer"?$("stage"):$("preview");
   Array.prototype.forEach.call(st.children,function(el){
@@ -487,13 +498,13 @@ function renderSandwiches(){
     var it=state.items[s.id];
     h+='<div class="sw" data-id="'+s.id+'"><div class="sw-name">'+esc(s.name)+'<small>Poster '+esc(s.price)+' €</small></div>'
       +'<div class="seg" role="group" aria-label="Status '+esc(s.name)+'">'
-      +segBtn("normal","Normal",it.mode)+segBtn("deal","Lunch Deal",it.mode)+segBtn("out","Aufgegessen",it.mode)+'</div>';
+      +segBtn("normal","Normal",it.mode)+segBtn("deal","Lunch Deal",it.mode,s.noDeal)+segBtn("out","Aufgegessen",it.mode)+'</div>';
     if(it.mode==="deal") h+='<div class="sw-deal"><label for="deal-'+s.id+'">Deal-Preis</label><input type="text" class="price" id="deal-'+s.id+'" data-deal="'+s.id+'" inputmode="decimal" value="'+esc(it.deal)+'" placeholder="8,50"><span>€ statt '+esc(s.price)+'</span></div>';
     h+='</div>';
   });
   $("sw-list").innerHTML=h;
 }
-function segBtn(m,label,cur){return '<button data-mode="'+m+'" aria-pressed="'+(m===cur)+'">'+label+'</button>';}
+function segBtn(m,label,cur,off){return '<button data-mode="'+m+'" aria-pressed="'+(m===cur)+'"'+(off?' disabled title="Für dieses Sandwich nicht verfügbar"':'')+'>'+label+'</button>';}
 function renderRows(){
   if(!state.rows.length){
     $("rows").innerHTML='<div class="empty">'+(stateLoaded?"Das Getränkefeld ist leer. Mit „Zeile hinzufügen“ kommt der erste Eintrag auf die Wand.":"Getränke werden geladen.")+'</div>';
@@ -749,7 +760,8 @@ function playFx(name){
 
 /* Käsefaden: drips from the bottom edge of the Grilled Cheese poster, stretches, snaps, drop falls */
 function cheeseScene(W,H){
-  var id=state.items.grilled.mode==="out"?null:"grilled";
+  /* no cheese while Grilled Cheese is sold out or shows a Lunch Deal: the drip would cover the deal price */
+  var id=state.items.grilled.mode==="normal"?"grilled":null;
   if(!id) return steamScene(W,H);
   var b=boxPx(id,W,H), y0=b.y+b.h*0.72; /* starts at the melted cheese of the sandwich photo, not at the frame edge */
   var drips=[
