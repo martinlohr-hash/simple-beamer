@@ -188,6 +188,14 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
       </section>
 
       <section>
+        <div class="sec-head"><h2>Beamer <em>an der Wand</em></h2></div>
+        <div class="setup">
+          <div class="seg" id="seg-power" role="group" aria-label="Beamer ein- oder ausschalten"><button data-power="on" aria-pressed="true">Eingeschaltet</button><button data-power="off" aria-pressed="false">Ausgeschaltet</button></div>
+          <p class="hint" style="margin:0" id="power-hint"></p>
+        </div>
+      </section>
+
+      <section>
         <div class="sec-head"><h2>Sandwiches</h2><button class="btn ghost sm" id="reset-day" data-confirm="Wirklich alle auf Normal?">Alle auf Normal</button></div>
         <div id="sw-list"></div>
       </section>
@@ -282,10 +290,10 @@ var SANDWICHES=[
   {id:"bigj",name:"Pastrami „Big J“",price:"21,90",noDeal:true},
   {id:"italian",name:"The Italian",price:"9,90"},
   {id:"grilled",name:"Grilled Cheese",price:"9,50"},
-  {id:"cannellini",name:"Cannellini & Zucchini",price:"9,90"},
+  {id:"cannellini",name:"Miso-Pumpkin",price:"9,90"},
   {id:"classic",name:"Pastrami Classic",price:"13,90",noDeal:true},
   {id:"pulled",name:"Pulled Beef",price:"10,50"},
-  {id:"porkbelly",name:"Korean Porkbelly",price:"9,90"}
+  {id:"porkbelly",name:"Salsiccia",price:"9,90"}
 ];
 /* Positions in % of the projected 16:9 image, estimated from the photo. */
 var DEFAULT_LAYOUT={scale:0.85,boxes:{
@@ -310,7 +318,7 @@ function uid(){return "r"+Date.now().toString(36)+Math.floor(Math.random()*1e4).
 
 function normState(d){
   d=d?clone(d):{};
-  var s={items:{},rows:[],notice:{on:false,text:""},setup:{on:false,sel:"bigj"}};
+  var s={items:{},rows:[],notice:{on:false,text:""},setup:{on:false,sel:"bigj"},power:{on:true}};
   SANDWICHES.forEach(function(x){
     var it=(d.items&&d.items[x.id])||{};
     s.items[x.id]={mode:(it.mode==="out"||(it.mode==="deal"&&!x.noDeal))?it.mode:"normal",deal:typeof it.deal==="string"?it.deal:""};
@@ -321,6 +329,7 @@ function normState(d){
   });
   if(d.notice){s.notice.on=!!d.notice.on;s.notice.text=String(d.notice.text||"");}
   if(d.setup){s.setup.on=!!d.setup.on;if(DEFAULT_LAYOUT.boxes[d.setup.sel])s.setup.sel=d.setup.sel;}
+  if(d.power&&d.power.on===false) s.power.on=false;
   s.anim={on:false,freq:"rare",play:null};
   if(d.anim){
     s.anim.on=!!d.anim.on; s.anim.freq=d.anim.freq==="often"?"often":"rare";
@@ -444,26 +453,28 @@ $("gate-beamer").addEventListener("click",function(){setView("beamer");});
 function setupOn(){return localSetup||state.setup.on;}
 function pos(b){return "left:"+b.x+"%;top:"+b.y+"%;width:"+b.w+"%;height:"+b.h+"%";}
 function stageHTML(preview){
+  var lit=state.power.on;
+  if(!lit&&!preview) return "";   /* projector off: black stage, no light on the wall */
   var showSetup=!preview&&setupOn(), mark=preview?state.setup.on:showSetup, h="";
   SANDWICHES.forEach(function(s){
     var it=state.items[s.id], sel=mark&&state.setup.sel===s.id;
     h+='<div class="box pf is-'+it.mode+(sel?" is-sel":"")+'" data-id="'+s.id+'" style="'+pos(layout.boxes[s.id])+'">';
     if(preview) h+='<div class="ph">'+esc(s.name)+'<span>'+esc(s.price)+'</span></div>';
-    if(it.mode==="out") h+='<div class="band">Aufgegessen</div>';
-    if(it.mode==="deal") h+='<div class="deal"><span class="dl">Lunch Deal</span><span class="strike"></span><span class="dp">'+esc(it.deal)+'</span></div>';
+    if(lit&&it.mode==="out") h+='<div class="band">Aufgegessen</div>';
+    if(lit&&it.mode==="deal") h+='<div class="deal"><span class="dl">Lunch Deal</span><span class="strike"></span><span class="dp">'+esc(it.deal)+'</span></div>';
     if(showSetup) h+='<div class="tag">'+esc(s.name)+'</div><div class="grip"></div>';
     h+='</div>';
   });
   var msel=mark&&state.setup.sel==="menu";
   h+='<div class="box mn'+(msel?" is-sel":"")+'" data-id="menu" style="'+pos(layout.boxes.menu)+'"><div class="menu-in" style="--scale:'+layout.scale+'">';
   state.rows.forEach(function(r){
-    if(r.hidden) return;
+    if(r.hidden||!lit) return;
     if(r.type==="gap") h+='<div class="m-gap"></div>';
     else if(r.type==="head") h+='<div class="m-head">'+esc(r.text)+'</div>';
     else if(r.type==="note") h+='<div class="m-note">'+esc(r.text)+'</div>';
     else h+='<div class="m-item"><span>'+esc(r.text)+'</span><span>'+esc(r.price)+'</span></div>';
   });
-  if(state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
+  if(lit&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
   h+='</div>';
   if(showSetup) h+='<div class="tag">Getränke</div><div class="grip"></div>';
   h+='</div>';
@@ -546,7 +557,12 @@ function renderAll(remote){
   renderSandwiches();renderRows();renderSetup();
   if(document.activeElement!==$("notice-text")) $("notice-text").value=state.notice.text;
   $("notice-on").checked=state.notice.on;
-  renderAnim();
+  renderAnim();renderPower();
+}
+function renderPower(){
+  var on=state.power.on;
+  Array.prototype.forEach.call($("seg-power").children,function(b){b.setAttribute("aria-pressed",String((b.dataset.power==="on")===on));});
+  $("power-hint").textContent=on?"Der Beamer zeigt Preise, Hinweise und Animationen an der Wand.":"Der Beamer ist aus: Die Wand bleibt dunkel, nur die gedruckten Poster sind zu sehen. Animationen pausieren.";
 }
 
 /* ---------- panel events ---------- */
@@ -587,6 +603,11 @@ $("add-row").addEventListener("click",function(){
   var r={id:uid(),type:"item",text:"",price:"",hidden:false};
   state.rows.push(r);renderRows();renderStages();saveState();
   var i=$("t-"+r.id); if(i) i.focus();
+});
+$("seg-power").addEventListener("click",function(e){
+  var b=e.target.closest("button[data-power]"); if(!b) return;
+  var on=b.dataset.power==="on"; if(state.power.on===on) return;
+  state.power.on=on;renderPower();renderStages();saveState();scheduleNext();
 });
 $("notice-text").addEventListener("input",function(e){state.notice.text=e.target.value;renderStages();saveState();});
 $("notice-on").addEventListener("change",function(e){state.notice.on=e.target.checked;renderStages();saveState();});
@@ -723,12 +744,12 @@ function animChanged(){
     lastPlayAt=p.at;
     if(view==="beamer"&&Math.abs(Date.now()-p.at)<120000) playFx(p.name);
   }
-  var k=state.anim.on+"|"+state.anim.freq;
+  var k=state.anim.on+"|"+state.anim.freq+"|"+state.power.on;
   if(k!==animKey){animKey=k;scheduleNext();}
 }
 function scheduleNext(){
   clearTimeout(autoT);
-  if(view!=="beamer"||!state.anim.on) return;
+  if(view!=="beamer"||!state.anim.on||!state.power.on) return;
   var r=state.anim.freq==="often"?[5,10]:[15,30];
   var ms=(r[0]+Math.random()*(r[1]-r[0]))*60000;
   autoT=setTimeout(function(){
@@ -742,7 +763,7 @@ function ease(v){v=clamp01(v);return v*v*(3-2*v);}
 var CREAM="242,238,224";
 function playFx(name){
   var c=view==="beamer"?$("fx-beam"):$("fx-preview");
-  if(!c||c._busy) return;
+  if(!state.power.on||!c||c._busy) return;
   var r=c.getBoundingClientRect(); if(!r.width||!r.height) return;
   var dpr=window.devicePixelRatio||1;
   c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);
