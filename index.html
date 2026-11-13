@@ -139,6 +139,27 @@ input.price{width:5.2em;text-align:right;font-variant-numeric:tabular-nums}
 .pv{position:relative}
 .fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;display:block}
 
+/* kasse: budget readout on the wall (stage) and the tap grid in the panel */
+.ks-in{position:absolute;inset:0;color:var(--light);font-family:var(--sans);display:flex;flex-direction:column;justify-content:center;gap:calc(var(--sw,1px)*.4);padding-inline:calc(var(--sw,1px)*.3)}
+.ks-row{display:flex;justify-content:space-between;align-items:baseline;gap:1em;font-size:calc(var(--sw,1px)*.8);letter-spacing:.18em;text-transform:uppercase;font-weight:600;white-space:nowrap;line-height:1}
+.ks-num{font-family:var(--serif);font-weight:700;font-size:calc(var(--sw,1px)*3.4);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ks-bar{height:calc(var(--sw,1px)*1);border:calc(var(--sw,1px)*.12) solid var(--light);padding:calc(var(--sw,1px)*.14)}
+.ks-fill{display:block;height:100%;width:100%;background:var(--light)}
+.k-stat{border:1px solid var(--green);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.k-remain{font-family:var(--serif);font-weight:700;font-size:clamp(32px,9vw,52px);line-height:1;font-variant-numeric:tabular-nums}
+.k-prog{height:14px;border:1px solid var(--green);padding:2px}
+.k-prog i{display:block;height:100%;width:100%;background:var(--green);transition:width .35s}
+.k-sub{font-size:13px;font-variant-numeric:tabular-nums}
+.k-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.k-art{position:relative;background:var(--cream);border:1px solid var(--green);min-height:96px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.k-art b{font-size:17px;font-weight:700;line-height:1.15}
+.k-art span{font-size:15px;font-variant-numeric:tabular-nums}
+.k-art em{position:absolute;top:8px;right:10px;font-style:normal;font-size:12px;font-weight:600}
+.k-art:active:not(:disabled){background:var(--green);color:var(--cream)}
+.k-art:disabled{opacity:.35;cursor:not-allowed}
+.k-edit summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+.kr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;margin-top:8px}
+
 /* ---------- beamer ---------- */
 body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
 .beam{position:fixed;inset:0;background:var(--beam-off)}
@@ -211,6 +232,34 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
         <p class="hint">Der Hinweis erscheint als heller Balken unten im Getränkefeld.</p>
       </section>
 
+      <section id="sec-kasse">
+        <div class="sec-head"><h2>Kasse <em>&amp; Budget</em></h2></div>
+        <div class="setup">
+          <label class="sw-t"><input type="checkbox" id="k-on"><span>Budget unten rechts an der Wand zeigen</span></label>
+          <div class="k-stat">
+            <div class="k-remain" id="k-remain"></div>
+            <div class="k-prog"><i id="k-fill"></i></div>
+            <div class="k-sub" id="k-sub"></div>
+          </div>
+          <div class="k-grid" id="k-grid"></div>
+          <div class="row-btns" style="margin-top:0">
+            <button class="btn ghost" id="k-undo">Letzten zurück</button>
+            <button class="btn ghost" id="k-reset" data-confirm="Wirklich Budget zurücksetzen?">Budget zurücksetzen</button>
+            <button class="btn ghost" id="k-test">Feuerwerk testen</button>
+          </div>
+          <label class="field"><span>Budget in €</span><input type="text" id="k-budget" inputmode="decimal" style="max-width:10em" aria-label="Budget in Euro"></label>
+          <details class="k-edit">
+            <summary>Artikel bearbeiten</summary>
+            <div id="k-items"></div>
+            <div class="row-btns">
+              <button class="btn" id="k-add">Artikel hinzufügen</button>
+              <button class="btn ghost" id="k-import">Getränkekarte übernehmen</button>
+            </div>
+          </details>
+          <p class="hint" style="margin:0">Jeder Tipp auf einen Artikel zieht den Preis vom Budget ab. Bei 0 gibt es ein Feuerwerk an der Wand. Position und Größe des Feldes stellst du unter „Beamer einrichten“ ein (Feld „Kasse“).</p>
+        </div>
+      </section>
+
       <section>
         <div class="sec-head"><h2>Animationen <em>an der Wand</em></h2></div>
         <div class="setup">
@@ -277,7 +326,7 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
     <button id="b-full">Vollbild</button>
     <button id="b-setup">Einrichten</button>
     <button id="b-panel">Zum Bedienfeld</button>
-    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3</span>
+    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 1</span>
   </div>
   <div class="bar-note" id="bar-note"></div>
 </div>
@@ -304,9 +353,10 @@ var DEFAULT_LAYOUT={scale:0.85,boxes:{
   classic:{x:0.7,y:47.1,w:21.9,h:54.2},
   pulled:{x:24.7,y:46.8,w:21.4,h:53.8},
   porkbelly:{x:48.2,y:47.0,w:21.4,h:53.9},
-  menu:{x:74.5,y:48.0,w:23.5,h:49.0}
+  menu:{x:74.5,y:48.0,w:23.5,h:49.0},
+  kasse:{x:74.5,y:85.0,w:23.5,h:13.0}
 }};
-var FX={cheese:1,steam:1,fork:1};
+var FX={cheese:1,steam:1,fork:1,fireworks:1};
 var TYPES={item:"Artikel",head:"Überschrift",note:"Notiz",gap:"Abstand"};
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
@@ -330,6 +380,21 @@ function normState(d){
   if(d.notice){s.notice.on=!!d.notice.on;s.notice.text=String(d.notice.text||"");}
   if(d.setup){s.setup.on=!!d.setup.on;if(DEFAULT_LAYOUT.boxes[d.setup.sel])s.setup.sel=d.setup.sel;}
   if(d.power&&d.power.on===false) s.power.on=false;
+  /* kasse: all money in whole cents, so nothing rounds wrong */
+  s.kasse={on:false,budget:50000,items:[],log:[]};
+  if(d.kasse&&typeof d.kasse==="object"){
+    var k=d.kasse;
+    s.kasse.on=!!k.on;
+    if(typeof k.budget==="number"&&isFinite(k.budget)&&k.budget>=0) s.kasse.budget=Math.round(k.budget);
+    if(Array.isArray(k.items)) k.items.slice(0,80).forEach(function(i){
+      if(!i||typeof i!=="object") return;
+      s.kasse.items.push({id:String(i.id||uid()),name:String(i.name||""),price:(typeof i.price==="number"&&isFinite(i.price)&&i.price>=0)?Math.round(i.price):0});
+    });
+    if(Array.isArray(k.log)) k.log.slice(-3000).forEach(function(l){
+      if(!l||typeof l!=="object"||typeof l.c!=="number"||!isFinite(l.c)) return;
+      s.kasse.log.push({i:String(l.i||""),n:String(l.n||""),c:Math.round(l.c),t:typeof l.t==="number"?l.t:0});
+    });
+  }
   s.anim={on:false,freq:"rare",play:null};
   if(d.anim){
     s.anim.on=!!d.anim.on; s.anim.freq=d.anim.freq==="often"?"often":"rare";
@@ -396,7 +461,7 @@ function apply(row,force){
   if(!row||!row.id) return;
   var t=Date.parse(row.updated_at)||0;
   if(!force&&seen[row.id]&&t<seen[row.id]) return;
-  if(row.id==="state"){ if(saveState.dirty) return; seen.state=t; state=normState(row.data); stateLoaded=true; animChanged(); }
+  if(row.id==="state"){ if(saveState.dirty) return; seen.state=t; state=normState(row.data); stateLoaded=true; kReady=true; animChanged(); }
   else if(row.id==="layout"){ if(saveLayout.dirty||drag) return; seen.layout=t; layout=normLayout(row.data); }
   else return;
   renderAll(true);
@@ -478,7 +543,58 @@ function stageHTML(preview){
   h+='</div>';
   if(showSetup) h+='<div class="tag">Getränke</div><div class="grip"></div>';
   h+='</div>';
+  if(lit&&(state.kasse.on||mark)){
+    var ksel=mark&&state.setup.sel==="kasse";
+    h+='<div class="box ks'+(ksel?" is-sel":"")+'" data-id="kasse" style="'+pos(layout.boxes.kasse)+'"><div class="ks-in">'
+      +'<div class="ks-row"><span class="ks-lab">Noch übrig</span><span class="ks-of"></span></div>'
+      +'<div class="ks-num"></div><div class="ks-bar"><i class="ks-fill"></i></div></div>';
+    if(showSetup) h+='<div class="tag">Kasse</div><div class="grip"></div>';
+    h+='</div>';
+  }
   return h;
+}
+
+/* ---------- kasse: budget counts down on the wall ---------- */
+var kReady=false, kShown=null, kTween=null, kRaf=0;
+function fmtEUR(c){
+  var neg=c<0; c=Math.abs(Math.round(c));
+  var e=Math.floor(c/100), ct=c%100;
+  return (neg?"-":"")+String(e).replace(/\B(?=(\d{3})+(?!\d))/g,".")+","+(ct<10?"0":"")+ct+" €";
+}
+function fmtInput(c){return (c/100).toFixed(2).replace(".",",").replace(/,00$/,"");}
+function parseCents(s){
+  var m=String(s==null?"":s).replace(/\s/g,"").replace(",",".").match(/\d+(?:\.\d{1,2})?/);
+  if(!m) return null;
+  var v=Math.round(parseFloat(m[0])*100);
+  return isFinite(v)?v:null;
+}
+function kSpent(){var s=0;state.kasse.log.forEach(function(l){s+=l.c;});return s;}
+function kRemain(){return Math.max(0,state.kasse.budget-kSpent());}
+function kasseSync(){
+  if(!kReady) return;
+  var tgt=kRemain();
+  if(kShown===null){kShown=tgt;return;}
+  if(kTween){if(kTween.to===tgt) return;}
+  else if(kShown===tgt) return;
+  cancelAnimationFrame(kRaf);
+  var from=kShown, t0=performance.now(), dur=clamp(Math.abs(from-tgt)/100*40+450,450,1400);
+  kTween={to:tgt};
+  (function f(now){
+    var u=clamp01((now-t0)/dur);
+    kShown=from+(tgt-from)*ease(u);
+    paintKasse();
+    if(u<1) kRaf=requestAnimationFrame(f);
+    else{kShown=tgt;kTween=null;paintKasse();}
+  })(t0);
+}
+function paintKasse(){
+  if(kShown===null) return;
+  var k=state.kasse, v=Math.round(kShown), pct=k.budget>0?clamp(kShown/k.budget*100,0,100):0;
+  var set=function(sel,fn){var l=document.querySelectorAll(sel);for(var i=0;i<l.length;i++)fn(l[i]);};
+  set(".ks-num",function(el){el.textContent=fmtEUR(v);});
+  set(".ks-fill",function(el){el.style.width=pct+"%";});
+  set(".ks-lab",function(el){el.textContent=v<=0?"Budget aufgebraucht":"Noch übrig";});
+  set(".ks-of",function(el){el.textContent="von "+fmtEUR(k.budget);});
 }
 function renderStages(){
   if(view==="beamer"){
@@ -486,6 +602,7 @@ function renderStages(){
     $("b-setup").textContent=setupOn()?"Einrichten beenden":"Einrichten";
   } else $("preview").innerHTML=stageHTML(true);
   sizeDeals();
+  kasseSync();paintKasse();
 }
 function sizeDeals(){
   var st=document.querySelectorAll(".stage");
@@ -542,6 +659,7 @@ function renderSetup(){
   if(!sel.options.length){
     SANDWICHES.forEach(function(s){sel.add(new Option(s.name,s.id));});
     sel.add(new Option("Getränkefeld","menu"));
+    sel.add(new Option("Kasse (Budget)","kasse"));
   }
   sel.value=state.setup.sel;
   $("setup-on").checked=state.setup.on;
@@ -553,8 +671,8 @@ function typing(){var a=document.activeElement;return a&&a.tagName==="INPUT"&&a.
 function renderAll(remote){
   renderStages();
   if(view!=="panel") return;
-  if(remote&&typing()){renderSetup();return;}
-  renderSandwiches();renderRows();renderSetup();
+  if(remote&&typing()){renderSetup();renderKasseStatus();return;}
+  renderSandwiches();renderRows();renderSetup();renderKasse();
   if(document.activeElement!==$("notice-text")) $("notice-text").value=state.notice.text;
   $("notice-on").checked=state.notice.on;
   renderAnim();renderPower();
@@ -626,6 +744,93 @@ confirmBtn($("reset-day"),function(){
   renderSandwiches();renderStages();saveState();
 });
 confirmBtn($("reset-layout"),function(){layout=normLayout(null);renderStages();renderSetup();saveLayout();});
+
+/* ---------- kasse: panel ---------- */
+function renderKasse(){renderKasseGrid();renderKasseEditor();}
+function renderKasseGrid(){
+  var h="";
+  state.kasse.items.forEach(function(it){
+    h+='<button class="k-art" data-id="'+esc(it.id)+'"><em></em><b>'+esc(it.name||"Ohne Name")+'</b><span>'+fmtEUR(it.price)+'</span></button>';
+  });
+  $("k-grid").innerHTML=h||'<div class="empty">Noch keine Artikel. Unten bei „Artikel bearbeiten“ welche anlegen oder die Getränkekarte übernehmen.</div>';
+  renderKasseStatus();
+}
+function renderKasseEditor(){
+  var h="";
+  state.kasse.items.forEach(function(it){
+    h+='<div class="kr" data-id="'+esc(it.id)+'"><input type="text" data-kf="name" value="'+esc(it.name)+'" placeholder="Artikel" aria-label="Artikelname">'
+      +'<input type="text" class="price" data-kf="price" inputmode="decimal" value="'+esc(fmtInput(it.price))+'" placeholder="3,50" aria-label="Preis in Euro">'
+      +'<button class="btn ghost sm" data-ka="del">Löschen</button></div>';
+  });
+  $("k-items").innerHTML=h;
+}
+function renderKasseStatus(){
+  var k=state.kasse, rem=kRemain(), sp=Math.min(kSpent(),k.budget), last=k.log[k.log.length-1], done=rem<=0;
+  $("k-remain").textContent=done?"Budget aufgebraucht":"Noch "+fmtEUR(rem);
+  $("k-fill").style.width=(k.budget>0?rem/k.budget*100:0)+"%";
+  $("k-sub").textContent="Ausgegeben "+fmtEUR(sp)+" von "+fmtEUR(k.budget)+(last?" · Zuletzt: "+(last.n||"Artikel")+" "+fmtEUR(last.c):"");
+  $("k-undo").disabled=!k.log.length;
+  $("k-on").checked=k.on;
+  if(document.activeElement!==$("k-budget")) $("k-budget").value=fmtInput(k.budget);
+  var cnt={};k.log.forEach(function(l){cnt[l.i]=(cnt[l.i]||0)+1;});
+  Array.prototype.forEach.call($("k-grid").querySelectorAll(".k-art"),function(b){
+    b.disabled=done;
+    var n=cnt[b.dataset.id];b.querySelector("em").textContent=n?"×"+n:"";
+  });
+}
+function triggerPlay(name){
+  var p={name:name,at:Date.now()};
+  state.anim.play=p;lastPlayAt=p.at;playFx(name);saveState();
+}
+$("k-grid").addEventListener("click",function(e){
+  var b=e.target.closest(".k-art"); if(!b||b.disabled) return;
+  var it=state.kasse.items.find(function(x){return x.id===b.dataset.id;}); if(!it) return;
+  var before=kRemain();
+  state.kasse.log.push({i:it.id,n:it.name,c:it.price,t:Date.now()});
+  renderKasseStatus();renderStages();
+  if(before>0&&kRemain()<=0) triggerPlay("fireworks"); else saveState();
+});
+$("k-undo").addEventListener("click",function(){
+  if(!state.kasse.log.length) return;
+  state.kasse.log.pop();renderKasseStatus();renderStages();saveState();
+});
+confirmBtn($("k-reset"),function(){state.kasse.log=[];renderKasseStatus();renderStages();saveState();});
+$("k-test").addEventListener("click",function(){triggerPlay("fireworks");});
+$("k-on").addEventListener("change",function(e){state.kasse.on=e.target.checked;renderStages();saveState();});
+$("k-budget").addEventListener("change",function(e){
+  var c=parseCents(e.target.value);
+  if(c!==null) state.kasse.budget=c;
+  renderKasseStatus();renderStages();saveState();
+  e.target.value=fmtInput(state.kasse.budget);
+});
+$("k-items").addEventListener("input",function(e){
+  var f=e.target.dataset.kf, row=e.target.closest(".kr"); if(!f||!row) return;
+  var it=state.kasse.items.find(function(x){return x.id===row.dataset.id;}); if(!it) return;
+  if(f==="name") it.name=e.target.value;
+  else{var c=parseCents(e.target.value); if(c===null) return; it.price=c;}
+  renderKasseGrid();saveState();
+});
+$("k-items").addEventListener("click",function(e){
+  var b=e.target.closest("button[data-ka]"); if(!b) return;
+  var id=b.closest(".kr").dataset.id;
+  state.kasse.items=state.kasse.items.filter(function(x){return x.id!==id;});
+  renderKasse();saveState();
+});
+$("k-add").addEventListener("click",function(){
+  var it={id:uid(),name:"",price:0};
+  state.kasse.items.push(it);renderKasse();saveState();
+  var i=$("k-items").querySelector('.kr[data-id="'+it.id+'"] input'); if(i) i.focus();
+});
+$("k-import").addEventListener("click",function(){
+  var have={};state.kasse.items.forEach(function(x){have[x.name.trim().toLowerCase()]=1;});
+  var n=0;
+  state.rows.forEach(function(r){
+    if(r.type!=="item"||!r.text.trim()||have[r.text.trim().toLowerCase()]) return;
+    var c=parseCents(r.price); if(c===null) return;
+    state.kasse.items.push({id:uid(),name:r.text.trim(),price:c});have[r.text.trim().toLowerCase()]=1;n++;
+  });
+  if(n){renderKasse();saveState();}
+});
 
 $("setup-on").addEventListener("change",function(e){state.setup.on=e.target.checked;renderStages();saveState();});
 $("sel-box").addEventListener("change",function(e){state.setup.sel=e.target.value;renderStages();renderSetup();saveState();});
@@ -769,7 +974,7 @@ function playFx(name){
   c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);
   var ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
   var W=r.width,H=r.height, st=view==="beamer"?$("stage"):$("preview");
-  var scene=name==="cheese"?cheeseScene(W,H):name==="fork"?forkScene(W,H,st,r):steamScene(W,H);
+  var scene=name==="cheese"?cheeseScene(W,H):name==="fork"?forkScene(W,H,st,r):name==="fireworks"?fireworksScene(W,H):steamScene(W,H);
   if(!scene) return;
   c._busy=true;
   var t0=performance.now();
@@ -895,6 +1100,44 @@ function forkScene(W,H,stageEl,r){
       }
     }
     ctx.globalAlpha=1;
+  }};
+}
+
+/* Feuerwerk (budget reached zero): small rockets from the bottom right, bursts in the upper right half */
+function fireworksScene(W,H){
+  var cols=["255,214,120","255,160,100","242,238,224","255,130,150","170,215,255"], B=[], i, j;
+  for(i=0;i<7;i++){
+    var ps=[], n=46;
+    for(j=0;j<n;j++){var a=Math.PI*2*j/n+Math.random()*0.25, v=W*(0.17+Math.random()*0.14);ps.push({vx:Math.cos(a)*v,vy:Math.sin(a)*v});}
+    B.push({t0:0.15+i*0.55+Math.random()*0.25, rise:0.9, sx:W*(0.80+Math.random()*0.16), sy:H*0.97,
+      ex:W*(0.52+Math.random()*0.42), ey:H*(0.10+Math.random()*0.38), col:cols[Math.floor(Math.random()*cols.length)], ps:ps});
+  }
+  var life=1.5;
+  function dot(ctx,x,y,r,col,al){ctx.fillStyle="rgba("+col+","+al.toFixed(3)+")";ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+  return {dur:6.4,draw:function(ctx,t){
+    ctx.globalCompositeOperation="lighter";
+    B.forEach(function(b){
+      var a=t-b.t0; if(a<0) return;
+      var r0=W*0.0028;
+      if(a<b.rise){
+        for(var k=0;k<6;k++){
+          var u=clamp01((a-k*0.025)/b.rise); u=1-(1-u)*(1-u);
+          dot(ctx,b.sx+(b.ex-b.sx)*u,b.sy+(b.ey-b.sy)*u,r0*(1-k*0.1),CREAM,1-k*0.17);
+        }
+        return;
+      }
+      var age=a-b.rise; if(age>life) return;
+      var kk=age/life, al=Math.pow(1-kk,1.4);
+      if(age<0.14) dot(ctx,b.ex,b.ey,W*0.03*(1-age/0.14),b.col,0.5*(1-age/0.14));
+      for(var p=0;p<b.ps.length;p++){
+        var q=b.ps[p];
+        for(var tr=0;tr<3;tr++){
+          var ag=Math.max(0,age-tr*0.045), e=(1-Math.exp(-2.6*ag))/2.6;
+          dot(ctx,b.ex+q.vx*e,b.ey+q.vy*e+H*0.1*ag*ag,r0*(1-kk*0.4)*(1-tr*0.22),b.col,al*(1-tr*0.3));
+        }
+      }
+    });
+    ctx.globalCompositeOperation="source-over";
   }};
 }
 
