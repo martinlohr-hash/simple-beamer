@@ -521,25 +521,26 @@ function stageHTML(preview){
   var lit=state.power.on;
   if(!lit&&!preview) return "";   /* projector off: black stage, no light on the wall */
   var showSetup=!preview&&setupOn(), mark=preview?state.setup.on:showSetup, h="";
+  var only=state.kasse.on&&!showSetup;   /* budget mode: the wall shows nothing but the budget */
   SANDWICHES.forEach(function(s){
     var it=state.items[s.id], sel=mark&&state.setup.sel===s.id;
     h+='<div class="box pf is-'+it.mode+(sel?" is-sel":"")+'" data-id="'+s.id+'" style="'+pos(layout.boxes[s.id])+'">';
     if(preview) h+='<div class="ph">'+esc(s.name)+'<span>'+esc(s.price)+'</span></div>';
-    if(lit&&it.mode==="out") h+='<div class="band">Aufgegessen</div>';
-    if(lit&&it.mode==="deal") h+='<div class="deal"><span class="dl">Lunch Deal</span><span class="strike"></span><span class="dp">'+esc(it.deal)+'</span></div>';
+    if(lit&&!only&&it.mode==="out") h+='<div class="band">Aufgegessen</div>';
+    if(lit&&!only&&it.mode==="deal") h+='<div class="deal"><span class="dl">Lunch Deal</span><span class="strike"></span><span class="dp">'+esc(it.deal)+'</span></div>';
     if(showSetup) h+='<div class="tag">'+esc(s.name)+'</div><div class="grip"></div>';
     h+='</div>';
   });
   var msel=mark&&state.setup.sel==="menu";
   h+='<div class="box mn'+(msel?" is-sel":"")+'" data-id="menu" style="'+pos(layout.boxes.menu)+'"><div class="menu-in" style="--scale:'+layout.scale+'">';
   state.rows.forEach(function(r){
-    if(r.hidden||!lit) return;
+    if(r.hidden||!lit||only) return;
     if(r.type==="gap") h+='<div class="m-gap"></div>';
     else if(r.type==="head") h+='<div class="m-head">'+esc(r.text)+'</div>';
     else if(r.type==="note") h+='<div class="m-note">'+esc(r.text)+'</div>';
     else h+='<div class="m-item"><span>'+esc(r.text)+'</span><span>'+esc(r.price)+'</span></div>';
   });
-  if(lit&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
+  if(lit&&!only&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
   h+='</div>';
   if(showSetup) h+='<div class="tag">Getränke</div><div class="grip"></div>';
   h+='</div>';
@@ -969,6 +970,7 @@ var CREAM="242,238,224";
 function playFx(name){
   var c=view==="beamer"?$("fx-beam"):$("fx-preview");
   if(!state.power.on||!c||c._busy) return;
+  if(state.kasse.on&&name!=="fireworks") return;   /* budget mode: no other animations */
   var r=c.getBoundingClientRect(); if(!r.width||!r.height) return;
   var dpr=window.devicePixelRatio||1;
   c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);
