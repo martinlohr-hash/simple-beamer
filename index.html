@@ -326,7 +326,7 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
     <button id="b-full">Vollbild</button>
     <button id="b-setup">Einrichten</button>
     <button id="b-panel">Zum Bedienfeld</button>
-    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 2 (nur Budget)</span>
+    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 3 (Karte nach Feuerwerk)</span>
   </div>
   <div class="bar-note" id="bar-note"></div>
 </div>
@@ -534,17 +534,17 @@ function stageHTML(preview){
   var msel=mark&&state.setup.sel==="menu";
   h+='<div class="box mn'+(msel?" is-sel":"")+'" data-id="menu" style="'+pos(layout.boxes.menu)+'"><div class="menu-in" style="--scale:'+layout.scale+'">';
   state.rows.forEach(function(r){
-    if(r.hidden||!lit||only) return;
+    if(r.hidden||!lit||(only&&!kMenuOn)) return;
     if(r.type==="gap") h+='<div class="m-gap"></div>';
     else if(r.type==="head") h+='<div class="m-head">'+esc(r.text)+'</div>';
     else if(r.type==="note") h+='<div class="m-note">'+esc(r.text)+'</div>';
     else h+='<div class="m-item"><span>'+esc(r.text)+'</span><span>'+esc(r.price)+'</span></div>';
   });
-  if(lit&&!only&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
+  if(lit&&(!only||kMenuOn)&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
   h+='</div>';
   if(showSetup) h+='<div class="tag">Getränke</div><div class="grip"></div>';
   h+='</div>';
-  if(lit&&(state.kasse.on||mark)){
+  if(lit&&((state.kasse.on&&!(only&&kMenuOn))||mark)){
     var ksel=mark&&state.setup.sel==="kasse";
     h+='<div class="box ks'+(ksel?" is-sel":"")+'" data-id="kasse" style="'+pos(layout.boxes.kasse)+'"><div class="ks-in">'
       +'<div class="ks-row"><span class="ks-lab">Noch übrig</span><span class="ks-of"></span></div>'
@@ -556,7 +556,7 @@ function stageHTML(preview){
 }
 
 /* ---------- kasse: budget counts down on the wall ---------- */
-var kReady=false, kShown=null, kTween=null, kRaf=0;
+var kReady=false, kShown=null, kTween=null, kRaf=0, kMenuOn=false, kMenuT=0;   /* kMenuOn: budget used up, drink prices are back on the wall */
 function fmtEUR(c){
   var neg=c<0; c=Math.abs(Math.round(c));
   var e=Math.floor(c/100), ct=c%100;
@@ -573,7 +573,14 @@ function kSpent(){var s=0;state.kasse.log.forEach(function(l){s+=l.c;});return s
 function kRemain(){return Math.max(0,state.kasse.budget-kSpent());}
 function kasseSync(){
   if(!kReady) return;
-  var tgt=kRemain();
+  var tgt=kRemain(), was=kMenuOn;
+  /* budget at zero: after the fireworks (7 s) the drink menu replaces the budget readout */
+  if(tgt>0){kMenuOn=false;clearTimeout(kMenuT);kMenuT=0;}
+  else if(!kMenuOn&&!kMenuT){
+    if(kShown===null) kMenuOn=true;
+    else kMenuT=setTimeout(function(){kMenuT=0;if(kRemain()<=0){kMenuOn=true;renderStages();}},7000);
+  }
+  if(kMenuOn!==was){renderStages();return;}
   if(kShown===null){kShown=tgt;return;}
   if(kTween){if(kTween.to===tgt) return;}
   else if(kShown===tgt) return;
