@@ -326,7 +326,7 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
     <button id="b-full">Vollbild</button>
     <button id="b-setup">Einrichten</button>
     <button id="b-panel">Zum Bedienfeld</button>
-    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 4 (Preise + Budget)</span>
+    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 5 (Kassen-Drinks)</span>
   </div>
   <div class="bar-note" id="bar-note"></div>
 </div>
@@ -536,14 +536,20 @@ function stageHTML(preview){
   var squeeze=only&&!kMenuOn, mb=layout.boxes.menu;
   if(squeeze) mb={x:mb.x,y:mb.y,w:mb.w,h:Math.max(5,layout.boxes.kasse.y-mb.y-1)};
   h+='<div class="box mn'+(msel?" is-sel":"")+'"'+(squeeze?' data-fit="1"':'')+' data-id="menu" style="'+pos(mb)+'"><div class="menu-in" style="--scale:'+layout.scale+'">';
-  state.rows.forEach(function(r){
+  if(state.kasse.on){
+    /* budget mode: the wall lists the Kasse articles with their prices (the same drinks that get tapped) */
+    if(lit&&state.kasse.items.length){
+      h+='<div class="m-head">Drinks</div>';
+      state.kasse.items.forEach(function(i){h+='<div class="m-item"><span>'+esc(i.name)+'</span><span>'+fmtEUR(i.price)+'</span></div>';});
+    }
+  } else state.rows.forEach(function(r){
     if(r.hidden||!lit) return;
     if(r.type==="gap") h+='<div class="m-gap"></div>';
     else if(r.type==="head") h+='<div class="m-head">'+esc(r.text)+'</div>';
     else if(r.type==="note") h+='<div class="m-note">'+esc(r.text)+'</div>';
     else h+='<div class="m-item"><span>'+esc(r.text)+'</span><span>'+esc(r.price)+'</span></div>';
   });
-  if(lit&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
+  if(lit&&!state.kasse.on&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
   h+='</div>';
   if(showSetup) h+='<div class="tag">Getränke</div><div class="grip"></div>';
   h+='</div>';
