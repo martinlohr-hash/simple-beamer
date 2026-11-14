@@ -326,7 +326,7 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
     <button id="b-full">Vollbild</button>
     <button id="b-setup">Einrichten</button>
     <button id="b-panel">Zum Bedienfeld</button>
-    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 5 (Kassen-Drinks)</span>
+    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 6 (Preise wie sonst)</span>
   </div>
   <div class="bar-note" id="bar-note"></div>
 </div>
@@ -540,7 +540,7 @@ function stageHTML(preview){
     /* budget mode: the wall lists the Kasse articles with their prices (the same drinks that get tapped) */
     if(lit&&state.kasse.items.length){
       h+='<div class="m-head">Drinks</div>';
-      state.kasse.items.forEach(function(i){h+='<div class="m-item"><span>'+esc(i.name)+'</span><span>'+fmtEUR(i.price)+'</span></div>';});
+      state.kasse.items.forEach(function(i){h+='<div class="m-item"><span>'+esc(i.name)+'</span><span>'+fmtInput(i.price).replace(/(,\d)0$/,'$1')+'</span></div>';});
     }
   } else state.rows.forEach(function(r){
     if(r.hidden||!lit) return;
