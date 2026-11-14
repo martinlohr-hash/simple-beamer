@@ -326,7 +326,7 @@ body[data-view="beamer"]{background:var(--beam-off);overflow:hidden}
     <button id="b-full">Vollbild</button>
     <button id="b-setup">Einrichten</button>
     <button id="b-panel">Zum Bedienfeld</button>
-    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 3 (Karte nach Feuerwerk)</span>
+    <span style="color:var(--cream);font-size:12px;align-self:center;opacity:.8">Version Deal-groß 3 · Menü 1 · Deal-Sperre · Animationen 3 · Kasse 4 (Preise + Budget)</span>
   </div>
   <div class="bar-note" id="bar-note"></div>
 </div>
@@ -532,15 +532,18 @@ function stageHTML(preview){
     h+='</div>';
   });
   var msel=mark&&state.setup.sel==="menu";
-  h+='<div class="box mn'+(msel?" is-sel":"")+'" data-id="menu" style="'+pos(layout.boxes.menu)+'"><div class="menu-in" style="--scale:'+layout.scale+'">';
+  /* budget running: the drink prices stay on the wall, squeezed into the space above the budget readout */
+  var squeeze=only&&!kMenuOn, mb=layout.boxes.menu;
+  if(squeeze) mb={x:mb.x,y:mb.y,w:mb.w,h:Math.max(5,layout.boxes.kasse.y-mb.y-1)};
+  h+='<div class="box mn'+(msel?" is-sel":"")+'"'+(squeeze?' data-fit="1"':'')+' data-id="menu" style="'+pos(mb)+'"><div class="menu-in" style="--scale:'+layout.scale+'">';
   state.rows.forEach(function(r){
-    if(r.hidden||!lit||(only&&!kMenuOn)) return;
+    if(r.hidden||!lit) return;
     if(r.type==="gap") h+='<div class="m-gap"></div>';
     else if(r.type==="head") h+='<div class="m-head">'+esc(r.text)+'</div>';
     else if(r.type==="note") h+='<div class="m-note">'+esc(r.text)+'</div>';
     else h+='<div class="m-item"><span>'+esc(r.text)+'</span><span>'+esc(r.price)+'</span></div>';
   });
-  if(lit&&(!only||kMenuOn)&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
+  if(lit&&state.notice.on&&state.notice.text.trim()) h+='<div class="m-notice">'+esc(state.notice.text)+'</div>';
   h+='</div>';
   if(showSetup) h+='<div class="tag">Getränke</div><div class="grip"></div>';
   h+='</div>';
@@ -610,7 +613,7 @@ function renderStages(){
     $("b-setup").textContent=setupOn()?"Einrichten beenden":"Einrichten";
   } else $("preview").innerHTML=stageHTML(true);
   sizeDeals();
-  kasseSync();paintKasse();
+  fitMenu();kasseSync();paintKasse();
 }
 function sizeDeals(){
   var st=document.querySelectorAll(".stage");
@@ -618,7 +621,20 @@ function sizeDeals(){
   var d=document.querySelectorAll(".deal,.band");
   for(var i=0;i<d.length;i++){var w=d[i].parentNode.getBoundingClientRect().width;if(w>0)d[i].style.setProperty("--u",(w/100)+"px");}
 }
-window.addEventListener("resize",sizeDeals);
+/* squeezed menu: shrink the type until every row fits above the budget readout */
+function fitMenu(){
+  var els=document.querySelectorAll(".mn[data-fit] .menu-in");
+  for(var i=0;i<els.length;i++){
+    var m=els[i], sc=layout.scale;
+    m.style.setProperty("--scale",sc);
+    for(var n=0;n<3;n++){
+      var ch=m.clientHeight, sh=m.scrollHeight;
+      if(ch>0&&sh>ch+1){sc=r2(Math.max(.25,sc*ch/sh*.97));m.style.setProperty("--scale",sc);} else break;
+    }
+  }
+}
+window.addEventListener("resize",function(){sizeDeals();fitMenu();});
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitMenu);
 function positionBoxes(){
   var st=view==="beamer"?$("stage"):$("preview");
   Array.prototype.forEach.call(st.children,function(el){
